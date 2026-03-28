@@ -55,7 +55,7 @@ class ParkingBay(Base):
         self.magnet = magnet
         self.timestamp = timestamp
 # database set up
-engine = create_engine('sqlite:///parking.db', echo = True)
+engine = create_engine('sqlite:///parkingbay2.db', echo = True)
 Session = sessionmaker(bind = engine)
 session = Session()
 Base.metadata.create_all(engine)
@@ -156,23 +156,23 @@ def main():
                 print(f" {dist:.2f} cm")
                 GPIO.output(RED_LED_PIN, GPIO.HIGH)
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
-                bay_status= ("bay 1 occupied")
+                bay_status= ("bay 2 occupied")
                 print("red led on")
             # result when ultrasonic and magnet are not detected
             elif dist is None and magnet == GPIO.HIGH:
-                bay_status = ("bay 1 vacant")
+                bay_status = ("bay 2 vacant")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
                 print("green led on")
             # result when magnet is detected and ultrasonic isnt
             elif dist is None and magnet == GPIO.LOW:
-                bay_status = ("ultrasonic not detecting")
+                bay_status = ("ultrasonic 2 not detecting")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
 
             else:
                 # when ultrasonic is detected and magnet isnt
-                bay_status = ("magnetic not detecting")
+                bay_status = ("magnetic 2 not detecting")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
     # saves a record in the database if i car comes, goes or a sensor breaks
