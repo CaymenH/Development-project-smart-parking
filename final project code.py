@@ -13,8 +13,13 @@ from azure.iot.device import  ProvisioningDeviceClient, IoTHubDeviceClient, Mess
 from constant import scope_ID, device_ID, Primary_Key, PROVISIONING_HOST
 import json
 import logging
-
-
+#import picamera2
+from picamera2 import Picamera2, Preview
+import base64
+picam2 = Picamera2()
+config = picam2.create_preview_configuration(Preview.DRM)
+picam2.configure(config)
+picam2.start()
 
 
 # Use the BCM pin numbering scheme
@@ -61,7 +66,7 @@ session = Session()
 Base.metadata.create_all(engine)
 
 saved_status = "start"
-def send_to_iot_central(status,distance,magnet):
+def send_to_iot_central(status,distance,magnet, carimage1):
     try:
         #provision client for iot central
         provisioning_client = ProvisioningDeviceClient.create_from_symmetric_key(
@@ -84,7 +89,8 @@ def send_to_iot_central(status,distance,magnet):
             telemetry_data = {
                 "bay_status":status,
                 "distance_cm": 0.0 if distance is None else float(distance),
-                "magnet":int(magnet)
+                "magnet":int(magnet),
+                "carimage": carimage1
                 }
             device_client.connect()
             message = Message(json.dumps(telemetry_data))
@@ -109,7 +115,6 @@ def distance():
     timeout = start_time + 0.1
 
     stop_time = time.time()
-
 
 
     # when the pin of triggered start the time
@@ -178,6 +183,7 @@ def main():
     # saves a record in the database if i car comes, goes or a sensor breaks
             if bay_status != saved_status:
                 record = ParkingBay(
+                    
                     bay_status=bay_status,
                     distance=dist,
                     magnet=magnet,
