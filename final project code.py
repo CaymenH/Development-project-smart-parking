@@ -17,7 +17,7 @@ import logging
 from picamera2 import Picamera2, Preview
 import base64
 picam2 = Picamera2()
-config = picam2.create_preview_configuration(Preview.DRM)
+config = picam2.create_preview_configuration()
 picam2.configure(config)
 picam2.start()
 
@@ -64,6 +64,7 @@ engine = create_engine('sqlite:///parking.db', echo = True)
 Session = sessionmaker(bind = engine)
 session = Session()
 Base.metadata.create_all(engine)
+
 
 saved_status = "start"
 def send_to_iot_central(status,distance,magnet, carimage1):
@@ -191,7 +192,12 @@ def main():
                 )
                 session.add(record)
                 session.commit()
-                send_to_iot_central(bay_status, dist, magnet)
+
+                
+                frame = picam2.capture_array()
+                carimage = base64.b64encode(frame).decode('utf-8')
+
+                send_to_iot_central(bay_status, dist, magnet, carimage)
 
 
                 # saves bay status
