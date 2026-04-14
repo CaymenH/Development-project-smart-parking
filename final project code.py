@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import asyncio
 import firebase_admin
-from firebase_admin import credentials, initialize_app, storage
+from firebase_admin import credentials, initialize_app, storage, firestore
 import json
 import logging
 #import picamera2
@@ -23,6 +23,12 @@ config = picam2.create_preview_configuration()
 picam2.configure(config)
 picam2.start()
 
+cred = credentials.Certificate('path/to/serviceAccountKey.json')
+default_app = firebase_admin.initialize_app(cred)
+
+database = firestore.client(app=default_app)
+
+bucket = storage.bucket(app=default_app)
 
 # Use the BCM pin numbering scheme
 GPIO.setmode(GPIO.BCM)
@@ -69,9 +75,8 @@ Base.metadata.create_all(engine)
 
 
 saved_status = "start"
-device_client = None
+
 def send_to_firebase(status,distance,magnet):
-    global device_client
     try:
        
 
@@ -81,10 +86,6 @@ def send_to_firebase(status,distance,magnet):
                 "distance_cm": 0.0 if distance is None else float(distance),
                 "magnet":int(magnet)
                 }
-            device_client.connect()
-            message = Message(json.dumps(telemetry_data))
-            device_client.send_message(message)
-           #device_client.disconnect()
     except Exception as e:
         print(f"azure failed: {e}")
 
@@ -132,7 +133,7 @@ def distance():
 
 # --- Main Test Loop ---
 def main():
-    global saved_status, device_client
+    global saved_status
     
     print("ultrasonic sensor is running")
     print("Press Ctrl+C to stop.")
@@ -185,11 +186,11 @@ def main():
                 send_to_firebase(bay_status, dist, magnet)
 
 
-                if device_client:   # device_client must exist (see note below)
+
                     image_bytes = picam2.capture_image("main", format="jpeg")
                     if image_bytes:
                         filename = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-                        device_client.upload_blob(filename, image_bytes, content_type="image/jpeg")
+                        .upload_blob(filename, image_bytes, content_type="image/jpeg")
                         print("Image uploaded")
 
 
