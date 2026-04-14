@@ -9,8 +9,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import asyncio
-from azure.iot.device import  ProvisioningDeviceClient, IoTHubDeviceClient, Message 
-from constant import scope_ID, device_ID, Primary_Key, PROVISIONING_HOST
+import firebase_admin
+from firebase_admin import credentials, initialize_app, storage
 import json
 import logging
 #import picamera2
@@ -70,25 +70,10 @@ Base.metadata.create_all(engine)
 
 saved_status = "start"
 device_client = None
-def send_to_iot_central(status,distance,magnet):
+def send_to_firebase(status,distance,magnet):
     global device_client
     try:
-        #provision client for iot central
-        provisioning_client = ProvisioningDeviceClient.create_from_symmetric_key(
-            provisioning_host=PROVISIONING_HOST,
-            registration_id=device_ID,      
-            id_scope=scope_ID,                
-            symmetric_key=Primary_Key
-        )
-        
-        registration_result = provisioning_client.register()
-
-        if registration_result.status == "assigned":
-            device_client = IoTHubDeviceClient.create_from_symmetric_key(
-                symmetric_key=Primary_Key,
-                hostname=registration_result.registration_state.assigned_hub,
-                device_id=device_ID
-            )
+       
 
             
             telemetry_data = {
@@ -197,7 +182,7 @@ def main():
                 session.commit()
 
 
-                send_to_iot_central(bay_status, dist, magnet)
+                send_to_firebase(bay_status, dist, magnet)
 
 
                 if device_client:   # device_client must exist (see note below)
