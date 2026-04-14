@@ -15,7 +15,9 @@ import json
 import logging
 #import picamera2
 from picamera2 import Picamera2, Preview
-import base64
+import io
+from PIL import Image
+
 picam2 = Picamera2()
 config = picam2.create_preview_configuration()
 picam2.configure(config)
@@ -67,7 +69,9 @@ Base.metadata.create_all(engine)
 
 
 saved_status = "start"
-def send_to_iot_central(status,distance,magnet, carimage1):
+device_client = None
+def send_to_iot_central(status,distance,magnet):
+    global device_client
     try:
         #provision client for iot central
         provisioning_client = ProvisioningDeviceClient.create_from_symmetric_key(
@@ -90,13 +94,12 @@ def send_to_iot_central(status,distance,magnet, carimage1):
             telemetry_data = {
                 "bay_status":status,
                 "distance_cm": 0.0 if distance is None else float(distance),
-                "magnet":int(magnet),
-                "carimage": carimage1
+                "magnet":int(magnet)
                 }
             device_client.connect()
             message = Message(json.dumps(telemetry_data))
             device_client.send_message(message)
-            device_client.disconnect()
+           #device_client.disconnect()
     except Exception as e:
         print(f"azure failed: {e}")
 
@@ -135,7 +138,7 @@ def distance():
     #calulating the distance 
     distance = (time_elapsed * 34300) / 2
 
-    # if the distance is greater than 400 or less than 5 do triggers
+    # if the distance is greater than 400 or less than 5 do triggers 
     if distance > 25 or distance < 5:
         # refers to the main loop than defines distance is none
         return None
@@ -144,7 +147,7 @@ def distance():
 
 # --- Main Test Loop ---
 def main():
-    global saved_status
+    global saved_status, device_client
     
     print("ultrasonic sensor is running")
     print("Press Ctrl+C to stop.")
@@ -193,11 +196,16 @@ def main():
                 session.add(record)
                 session.commit()
 
-                
-                frame = picam2.capture_array()
-                carimage = base64.b64encode(frame).decode('utf-8')
 
-                send_to_iot_central(bay_status, dist, magnet, carimage)
+                send_to_iot_central(bay_status, dist, magnet)
+
+
+                if device_client:   # device_client must exist (see note below)
+                    image_bytes = picam2.capture_image("main", format="jpeg")
+                    if image_bytes:
+                        filename = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                        device_client.upload_blob(filename, image_bytes, content_type="image/jpeg")
+                        print("Image uploaded")
 
 
                 # saves bay status
