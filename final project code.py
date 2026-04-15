@@ -23,9 +23,9 @@ config = picam2.create_preview_configuration()
 picam2.configure(config)
 picam2.start()
 
-cred = credentials.Certificate('/home/c2025778/Rpi_codes/iot-smart-parking-606bb-firebase-adminsdk-fbsvc-eca4d9af5a.json')
+cred = credentials.Certificate(  "/home/c2025778/Rpi_codes/smart-parking-edd43-firebase-adminsdk-fbsvc-236aa62756.json")
 default_app = firebase_admin.initialize_app(cred, {
-    'storageBucket': 'iot-smart-parking-606bb.appspot.com'
+    'storageBucket': "smart-parking-edd43.firebasestorage.app"
 })
 
 database = firestore.client(app=default_app)
@@ -185,12 +185,15 @@ def main():
 
 
                 send_to_firebase(bay_status, dist, magnet)
+                image_array = picam2.capture_array()
 
+                stream = io.BytesIO()
+                image = Image.fromarray(image_array).convert("RGB")
+                image.save(stream, format="JPEG")
+                image_bytes = stream.getvalue()
 
-
-                image_bytes = picam2.capture_image("main", format="jpeg")
+                
                 if image_bytes:
-                    bucket = storage.bucket()
                     carimage = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
                     blob = bucket.blob(carimage)
                     blob.upload_from_string(image_bytes, content_type="image/jpeg")
