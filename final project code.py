@@ -23,8 +23,10 @@ config = picam2.create_preview_configuration()
 picam2.configure(config)
 picam2.start()
 
-cred = credentials.Certificate('path/to/serviceAccountKey.json')
-default_app = firebase_admin.initialize_app(cred)
+cred = credentials.Certificate('/home/c2025778/Rpi_codes/iot-smart-parking-606bb-firebase-adminsdk-fbsvc-eca4d9af5a.json')
+default_app = firebase_admin.initialize_app(cred, {
+    'storageBucket': 'iot-smart-parking-606bb.appspot.com'
+})
 
 database = firestore.client(app=default_app)
 
@@ -78,16 +80,15 @@ saved_status = "start"
 
 def send_to_firebase(status,distance,magnet):
     try:
-       
-
-            
             telemetry_data = {
                 "bay_status":status,
                 "distance_cm": 0.0 if distance is None else float(distance),
                 "magnet":int(magnet)
                 }
+            
+            database.collection("parking_bay1").add(telemetry_data)
     except Exception as e:
-        print(f"azure failed: {e}")
+        print(f"firebase failed: {e}")
 
 
 def distance():
@@ -187,11 +188,13 @@ def main():
 
 
 
-                    image_bytes = picam2.capture_image("main", format="jpeg")
-                    if image_bytes:
-                        filename = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-                        .upload_blob(filename, image_bytes, content_type="image/jpeg")
-                        print("Image uploaded")
+                image_bytes = picam2.capture_image("main", format="jpeg")
+                if image_bytes:
+                    bucket = storage.bucket()
+                    carimage = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                    blob = bucket.blob(carimage)
+                    blob.upload_from_string(image_bytes, content_type="image/jpeg")
+                    print("Image uploaded")
 
 
                 # saves bay status
