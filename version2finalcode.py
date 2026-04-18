@@ -64,13 +64,13 @@ class ParkingBay(Base):
     magnet = Column(Integer, nullable=True)
 
     def __init__(self, bay_status, distance, magnet, timestamp):
-        self.number_bay = 1
+        self.number_bay = 2
         self.bay_status = bay_status
         self.distance = distance
         self.magnet = magnet
         self.timestamp = timestamp
 # database set up
-engine = create_engine('sqlite:///parking.db', echo = True)
+engine = create_engine('sqlite:///parking2.db', echo = True)
 Session = sessionmaker(bind = engine)
 session = Session()
 Base.metadata.create_all(engine)
@@ -86,7 +86,7 @@ def send_to_firebase(status,distance,magnet):
                 "magnet":int(magnet)
                 }
             
-            database.collection("parking_bay1").add(telemetry_data)
+            database.collection("parking_bay2").add(telemetry_data)
     except Exception as e:
         print(f"firebase failed: {e}")
 
@@ -152,11 +152,11 @@ def main():
                 print(f" {dist:.2f} cm")
                 GPIO.output(RED_LED_PIN, GPIO.HIGH)
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
-                bay_status= ("bay 1 occupied")
+                bay_status= ("bay 2 occupied")
                 print("red led on")
             # result when ultrasonic and magnet are not detected
             elif dist is None and magnet == GPIO.HIGH:
-                bay_status = ("bay 1 vacant")
+                bay_status = ("bay 2 vacant")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
                 print("green led on")
@@ -194,8 +194,8 @@ def main():
 
                 
                 if image_bytes:
-                    carimage = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-                    blob = bucket.blob(carimage)
+                    carimage2 = f"car2_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                    blob = bucket.blob(carimage2)
                     blob.upload_from_string(image_bytes, content_type="image/jpeg")
                     print("Image uploaded")
 
