@@ -12,11 +12,6 @@ bucket = storage.bucket(app=default_app)
 
 
 
-docs = database.collection("parking_bay2").stream()
-
-for doc in docs:
-    print(f"{doc.id} => {doc.to_dict()}")
-
 st.write("smart parking application")
 
 main_page = st.Page("main_page.py", title="Select your bay")
