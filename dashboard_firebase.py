@@ -11,4 +11,14 @@ database = firestore.client(app=default_app)
 bucket = storage.bucket(app=default_app)
 
 
+docs = database.collection("parking_bay2").stream()
 
+for doc in docs:
+     st.write(f"{doc.id} => {doc.to_dict()}")
+
+import streamlit as st
+
+docs = database.collection("parking_bay2").stream()
+
+for doc in docs:
+     st.write(f"{doc.id} => {doc.to_dict()}")
