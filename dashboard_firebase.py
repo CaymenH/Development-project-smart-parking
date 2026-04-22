@@ -12,12 +12,3 @@ bucket = storage.bucket(app=default_app)
 
 
 
-st.write("smart parking application")
-
-main_page = st.Page("main_page.py", title="Select your bay")
-bay_1 = st.Page("bay_1.py", title="parking bay 1 info")
-bay_2 = st.Page("bay_2.py", title="parking bay 2 info")
-bay_3 = st.Page("bay_3.py", title="parking bay 3 info")
-
-pg = st.navigation([main_page, bay_1, bay_2, bay_3])
-pg.run()
