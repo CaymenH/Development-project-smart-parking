@@ -10,10 +10,7 @@ default_app = firebase_admin.initialize_app(cred, {
 database = firestore.client(app=default_app)
 bucket = storage.bucket(app=default_app)
 
-docs = database.collection("parking_bay1").stream()
 
-for doc in docs:
-    print(f"{doc.id} => {doc.to_dict()}")
 
 docs = database.collection("parking_bay2").stream()
 
