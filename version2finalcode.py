@@ -23,7 +23,7 @@ config = picam2.create_preview_configuration()
 picam2.configure(config)
 picam2.start()
 
-cred = credentials.Certificate(  "/home/c2025778/Rpi_codes/smart-parking-edd43-firebase-adminsdk-fbsvc-236aa62756.json")
+cred = credentials.Certificate(  "/home/picaymen2/raspberrypi_codes2/smart-parking-edd43-firebase-adminsdk-fbsvc-236aa62756.json")
 default_app = firebase_admin.initialize_app(cred, {
     'storageBucket': "smart-parking-edd43.firebasestorage.app"
 })
@@ -48,7 +48,7 @@ GPIO.setup(RED_LED_PIN, GPIO.OUT)
 GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
 GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_ECHO, GPIO.IN)
-GPIO.setup(MAGNET_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(MAGNET_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 
 class Base(DeclarativeBase):
@@ -148,20 +148,20 @@ def main():
             bay_status = ""
             timestamp = dt.now()
             # result when ultrasonic and magnet are both detected
-            if dist is not None and magnet == GPIO.LOW:
+            if dist is not None and magnet == GPIO.HIGH:
                 print(f" {dist:.2f} cm")
                 GPIO.output(RED_LED_PIN, GPIO.HIGH)
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
                 bay_status= ("bay 2 occupied")
                 print("red led on")
             # result when ultrasonic and magnet are not detected
-            elif dist is None and magnet == GPIO.HIGH:
+            elif dist is None and magnet == GPIO.LOW:
                 bay_status = ("bay 2 vacant")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
                 print("green led on")
             # result when magnet is detected and ultrasonic isnt
-            elif dist is None and magnet == GPIO.LOW:
+            elif dist is None and magnet == GPIO.HIGH:
                 bay_status = ("ultrasonic not detecting")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
                 GPIO.output(GREEN_LED_PIN, GPIO.LOW)
