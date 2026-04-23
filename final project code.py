@@ -83,7 +83,8 @@ def send_to_firebase(status,distance,magnet):
             telemetry_data = {
                 "bay_status":status,
                 "distance_cm": 0.0 if distance is None else float(distance),
-                "magnet":int(magnet)
+                "magnet":int(magnet),
+                "timestamp": firestore.SERVER_TIMESTAMP
                 }
             
             database.collection("parking_bay1").add(telemetry_data)
