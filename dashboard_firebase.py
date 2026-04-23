@@ -21,8 +21,10 @@ st.title("Smart Parking Application Dashboard")
 
 bay = st.selectbox("Select Parking Bay", ("Bay 1", "Bay 2", "Bay 3"))
 
-collection_name = database.collection(f"parking_{bay.lower().replace('', '')}")
-    
+bay_fix = bay.lower().replace(' ', '')
+collection_name = database.collection(f"parking_{bay_fix}")
+
+
 for doc in collection_name.stream():
      st.write(f"{doc.id} => {doc.to_dict()}")
 
