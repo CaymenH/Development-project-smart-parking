@@ -25,8 +25,9 @@ bay_fix = bay.lower().replace(' ', '')
 collection_name = database.collection(f"parking_{bay_fix}")
 
 
-for doc in collection_name.stream():
-     st.write(f"{doc.id} => {doc.to_dict()}")
 
 
+latest = collection_name.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
+for doc in latest.stream():
+    st.success(f"Latest data for {bay}: {doc.to_dict()}")
 
