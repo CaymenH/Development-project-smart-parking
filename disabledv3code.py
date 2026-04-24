@@ -9,13 +9,28 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 import asyncio
-from azure.iot.device import  ProvisioningDeviceClient, IoTHubDeviceClient, Message 
-from constant import scope_ID, device_ID, Primary_Key, PROVISIONING_HOST
+import firebase_admin
+from firebase_admin import credentials, initialize_app, storage, firestore
 import json
 import logging
+#import picamera2
+from picamera2 import Picamera2, Preview
+import io
+from PIL import Image
 
+picam2 = Picamera2()
+config = picam2.create_preview_configuration()
+picam2.configure(config)
+picam2.start()
 
+cred = credentials.Certificate(  "/home/c2025778/Rpi_codes/smart-parking-edd43-firebase-adminsdk-fbsvc-236aa62756.json")
+default_app = firebase_admin.initialize_app(cred, {
+    'storageBucket': "smart-parking-edd43.firebasestorage.app"
+})
 
+database = firestore.client(app=default_app)
+
+bucket = storage.bucket(app=default_app)
 
 # Use the BCM pin numbering scheme
 GPIO.setmode(GPIO.BCM)
@@ -23,14 +38,14 @@ GPIO.setmode(GPIO.BCM)
 
 # seting gpio pin number 
 RED_LED_PIN = 26
-BLUE_LED_PIN = 24
+GREEN_LED_PIN = 24
 GPIO_TRIGGER = 16
 GPIO_ECHO = 25
 MAGNET_PIN = 17
 
 # setup of pins
 GPIO.setup(RED_LED_PIN, GPIO.OUT)
-GPIO.setup(BLUE_LED_PIN, GPIO.OUT)
+GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
 GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_ECHO, GPIO.IN)
 GPIO.setup(MAGNET_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -40,7 +55,7 @@ class Base(DeclarativeBase):
     pass
 
 class ParkingBay(Base):
-    _tablename_ = 'parking_bay3'
+    __tablename__ = 'parking_bay'
     id = Column(Integer, primary_key=True, index=True)
     number_bay = Column(Integer, nullable=False, default=1)
     bay_status = Column(String, nullable=False)
@@ -48,50 +63,33 @@ class ParkingBay(Base):
     distance = Column(Float, nullable=True)
     magnet = Column(Integer, nullable=True)
 
-    def _init_(self, bay_status, distance, magnet, timestamp):
+    def __init__(self, bay_status, distance, magnet, timestamp):
         self.number_bay = 1
         self.bay_status = bay_status
         self.distance = distance
         self.magnet = magnet
         self.timestamp = timestamp
 # database set up
-engine = create_engine('sqlite:///parking3.db', echo = True)
+engine = create_engine('sqlite:///parking.db', echo = True)
 Session = sessionmaker(bind = engine)
 session = Session()
 Base.metadata.create_all(engine)
 
+
 saved_status = "start"
-def send_to_iot_central(status,distance,magnet):
+
+def send_to_firebase(status,distance,magnet):
     try:
-        #provision client for iot central
-        provisioning_client = ProvisioningDeviceClient.create_from_symmetric_key(
-            provisioning_host=PROVISIONING_HOST,
-            registration_id=device_ID,      
-            id_scope=scope_ID,                
-            symmetric_key=Primary_Key
-        )
-        
-        registration_result = provisioning_client.register()
-
-        if registration_result.status == "assigned":
-            device_client = IoTHubDeviceClient.create_from_symmetric_key(
-                symmetric_key=Primary_Key,
-                hostname=registration_result.registration_state.assigned_hub,
-                device_id=device_ID
-            )
-
-            
             telemetry_data = {
                 "bay_status":status,
                 "distance_cm": 0.0 if distance is None else float(distance),
-                "magnet":int(magnet)
+                "magnet":int(magnet),
+                "timestamp": firestore.SERVER_TIMESTAMP
                 }
-            device_client.connect()
-            message = Message(json.dumps(telemetry_data))
-            device_client.send_message(message)
-            device_client.disconnect()
+            
+            database.collection("parking_bay1").add(telemetry_data)
     except Exception as e:
-        print(f"azure failed: {e}")
+        print(f"firebase failed: {e}")
 
 
 def distance():
@@ -111,7 +109,6 @@ def distance():
     stop_time = time.time()
 
 
-
     # when the pin of triggered start the time
     while GPIO.input(GPIO_ECHO) == 0:
         start_time = time.time()
@@ -129,7 +126,7 @@ def distance():
     #calulating the distance 
     distance = (time_elapsed * 34300) / 2
 
-    # if the distance is greater than 400 or less than 5 do triggers
+    # if the distance is greater than 400 or less than 5 do triggers 
     if distance > 25 or distance < 5:
         # refers to the main loop than defines distance is none
         return None
@@ -155,29 +152,30 @@ def main():
             if dist is not None and magnet == GPIO.LOW:
                 print(f" {dist:.2f} cm")
                 GPIO.output(RED_LED_PIN, GPIO.HIGH)
-                GPIO.output(BLUE_LED_PIN, GPIO.LOW)
-                bay_status= ("disabled bay 3  occupied")
+                GPIO.output(GREEN_LED_PIN, GPIO.LOW)
+                bay_status= ("bay 1 occupied")
                 print("red led on")
             # result when ultrasonic and magnet are not detected
             elif dist is None and magnet == GPIO.HIGH:
-                bay_status = ("disabled bay 3 vacant")
+                bay_status = ("bay 1 vacant")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
-                GPIO.output(BLUE_LED_PIN, GPIO.HIGH)
-                print("BLUE led on")
+                GPIO.output(GREEN_LED_PIN, GPIO.HIGH)
+                print("green led on")
             # result when magnet is detected and ultrasonic isnt
             elif dist is None and magnet == GPIO.LOW:
-                bay_status = ("disabled bay 3 ultrasonic not detecting")
+                bay_status = ("ultrasonic not detecting")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
-                GPIO.output(BLUE_LED_PIN, GPIO.LOW)
+                GPIO.output(GREEN_LED_PIN, GPIO.LOW)
 
             else:
                 # when ultrasonic is detected and magnet isnt
                 bay_status = ("magnetic not detecting")
                 GPIO.output(RED_LED_PIN, GPIO.LOW)
-                GPIO.output(BLUE_LED_PIN, GPIO.LOW)
+                GPIO.output(GREEN_LED_PIN, GPIO.LOW)
     # saves a record in the database if i car comes, goes or a sensor breaks
             if bay_status != saved_status:
                 record = ParkingBay(
+                    
                     bay_status=bay_status,
                     distance=dist,
                     magnet=magnet,
@@ -185,7 +183,22 @@ def main():
                 )
                 session.add(record)
                 session.commit()
-                send_to_iot_central(bay_status, dist, magnet)
+
+
+                send_to_firebase(bay_status, dist, magnet)
+                image_array = picam2.capture_array()
+
+                stream = io.BytesIO()
+                image = Image.fromarray(image_array).convert("RGB")
+                image.save(stream, format="JPEG")
+                image_bytes = stream.getvalue()
+
+                
+                if image_bytes:
+                    carimage = f"car_{dt.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                    blob = bucket.blob(carimage)
+                    blob.upload_from_string(image_bytes, content_type="image/jpeg")
+                    print("Image uploaded")
 
 
                 # saves bay status
@@ -196,5 +209,5 @@ def main():
         session.close()
         GPIO.cleanup()
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
