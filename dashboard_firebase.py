@@ -3,6 +3,7 @@ from firebase_admin import credentials, firestore, storage
 import streamlit as st
 import time
 
+
 if not firebase_admin._apps:
     cred = credentials.Certificate("/home/c2025778/Rpi_codes/smart-parking-edd43-firebase-adminsdk-fbsvc-236aa62756.json")
     default_app = firebase_admin.initialize_app(cred, {
@@ -23,25 +24,31 @@ bay = st.selectbox("Select Parking Bay", ("Bay 1", "Bay 2", "Bay 3"))
 
 bay_fix = bay.lower().replace(' ', '')
 collection_name = database.collection(f"parking_{bay_fix}")
-
+bay_data = None
 
 latest = collection_name.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
 for doc in latest.stream():
     st.header(f"Latest data for {bay}: {doc.to_dict()}")
+    
+    bay_data = doc.to_dict()
 
-st.markdown[":red[bay 1 occupied]"]
-st.markdown[":red[bay 2 occupied]"]
-st.markdown[":red[disabled bay 3 occupied]"]
 
-st.markdown[":green[bay 1 vacant]"]
-st.markdown[":green[bay 2 vacant]"]
-st.markdown[":blue [ disabled bay 3 vacant]"]
+if bay_data:
+    status_of_bay = bay_data.get("bay_status")
 
-st.markdown[":orange[ultrasonic not detecting]"]
-st.markdown[":yellow[magnetic not detecting]"]
-if st.button("Refresh Data"):
-    st.rerun()
+
+
+if status_of_bay == "vacant":
+    st.markdown(":green[bay vacant]")
+elif status_of_bay == "occupied":
+    st.markdown(":red[bay occupied]")
+elif status_of_bay == "disabled":
+    st.markdown(":blue[disabled bay vacant]")
+elif status_of_bay == "ultrasonic not detecting":
+    st.markdown(":orange[ultrasonic not detecting]")
+elif status_of_bay == "magnetic not detecting":
+    st.markdown(":yellow[magnetic not detecting]")
+
 
 time.sleep(5)
 st.rerun()
-
