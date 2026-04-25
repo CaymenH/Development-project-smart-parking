@@ -29,8 +29,16 @@ latest = collection_name.order_by("timestamp", direction=firestore.Query.DESCEND
 for doc in latest.stream():
     st.header(f"Latest data for {bay}: {doc.to_dict()}")
 
+st.markdown[":red[bay 1 occupied]"]
+st.markdown[":red[bay 2 occupied]"]
+st.markdown[":red[disabled bay 3 occupied]"]
 
+st.markdown[":green[bay 1 vacant]"]
+st.markdown[":green[bay 2 vacant]"]
+st.markdown[":blue [ disabled bay 3 vacant]"]
 
+st.markdown[":orange[ultrasonic not detecting]"]
+st.markdown[":yellow[magnetic not detecting]"]
 if st.button("Refresh Data"):
     st.rerun()
 
