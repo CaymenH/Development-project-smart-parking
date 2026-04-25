@@ -27,7 +27,12 @@ collection_name = database.collection(f"parking_{bay_fix}")
 
 latest = collection_name.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
 for doc in latest.stream():
-    st.success(f"Latest data for {bay}: {doc.to_dict()}")
+    st.header(f"Latest data for {bay}: {doc.to_dict()}")
+
+
+
+if st.button("Refresh Data"):
+    st.rerun()
 
 time.sleep(5)
 st.rerun()
