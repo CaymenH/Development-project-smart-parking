@@ -15,8 +15,8 @@ else:
 database = firestore.client(app=default_app)
 bucket = storage.bucket(app=default_app)
 
-
- 
+bay_data = None
+status_of_bay = None
 
 st.title("Smart Parking Application Dashboard")
 
@@ -24,7 +24,7 @@ bay = st.selectbox("Select Parking Bay", ("Bay 1", "Bay 2", "Bay 3"))
 
 bay_fix = bay.lower().replace(' ', '')
 collection_name = database.collection(f"parking_{bay_fix}")
-bay_data = None
+
 
 latest = collection_name.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
 for doc in latest.stream():
@@ -35,6 +35,8 @@ for doc in latest.stream():
 
 if bay_data:
     status_of_bay = bay_data.get("bay_status")
+else:
+    st.warning("No data available for the selected bay.")
 
 
 
@@ -48,7 +50,8 @@ elif status_of_bay == "ultrasonic not detecting":
     st.markdown(":orange[ultrasonic not detecting]")
 elif status_of_bay == "magnetic not detecting":
     st.markdown(":yellow[magnetic not detecting]")
+else:
+    st.warning("no data yet")
 
-
-time.sleep(5)
+time.sleep(3)
 st.rerun()
