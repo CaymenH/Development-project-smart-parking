@@ -36,19 +36,42 @@ if bay_data:
 else:
     st.warning("No data available for the selected bay.")
 
-
-
-if status_of_bay == "vacant":
-    st.markdown(":green[bay vacant]")
-elif status_of_bay == "occupied":
-    st.markdown(":red[bay occupied]")
-elif status_of_bay == "disabled":
-    st.markdown(":blue[disabled bay vacant]")
+if status_of_bay == "bay 1 vacant":
+    st.markdown(
+    "<p style='font-size:40px;color:green;'>bay vacant</p>", 
+    unsafe_allow_html=True)
+elif status_of_bay == "bay 2 vacant":
+    st.markdown(
+    "<p style='font-size:40px;color:green;'>bay vacant</p>", 
+    unsafe_allow_html=True)
+elif status_of_bay == "bay 3 vacant":
+    st.markdown(
+        "<p style='font-size:40px;color:blue;'>bay vacant</p>", 
+    unsafe_allow_html=True)
+elif status_of_bay == "bay 1 occupied":
+    st.markdown(
+        "<p style='font-size:40px;color:red;'>bay occupied</p>", 
+    unsafe_allow_html=True)
+elif status_of_bay == "bay 2 occupied":
+    st.markdown(
+        "<p style='font-size:40px;color:red;'>bay occupied</p>", 
+        unsafe_allow_html=True) 
+elif status_of_bay == "bay 3 occupied":
+    st.markdown(
+    "<p style='font-size:40px;color:red;'>bay occupied</p>", 
+    unsafe_allow_html=True)
 elif status_of_bay == "ultrasonic not detecting":
-    st.markdown(":orange[ultrasonic not detecting]")
+    st.markdown(
+        "<p style='font-size:40px;color:orange;'>ultrasonic not detecting</p>", 
+        unsafe_allow_html=True
+    )
 elif status_of_bay == "magnetic not detecting":
-    st.markdown(":yellow[magnetic not detecting]")
-else:
-    st.warning("no data yet")
+    st.markdown(
+        "<p style='font-size:40px;color:orange;'>magnetic not detecting</p>", 
+        unsafe_allow_html=True
+    )
+    
 
-st_autorefresh(interval=3000, key="refresh")
+
+time.sleep(3)
+st.rerun()
