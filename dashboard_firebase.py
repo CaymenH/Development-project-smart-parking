@@ -3,7 +3,7 @@ from firebase_admin import credentials, firestore, storage
 import streamlit as st
 import time
 
-
+# installing of firebase admin and linking to firestore
 if not firebase_admin._apps:
     cred = credentials.Certificate("/home/c2025778/Rpi_codes/smart-parking-edd43-firebase-adminsdk-fbsvc-236aa62756.json")
     default_app = firebase_admin.initialize_app(cred, {
@@ -27,10 +27,8 @@ collection_name = database.collection(f"parking_{bay_fix}")
 
 
 latest = collection_name.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(1)
-for doc in latest.stream():
-    st.header(f"Latest data for {bay}: {doc.to_dict()}")
-    
-    bay_data = doc.to_dict()
+docs = list(latest.stream())
+bay_data = docs[0].to_dict() if docs else None
 
 
 if bay_data:
@@ -53,5 +51,4 @@ elif status_of_bay == "magnetic not detecting":
 else:
     st.warning("no data yet")
 
-time.sleep(3)
-st.rerun()
+st_autorefresh(interval=3000, key="refresh")
